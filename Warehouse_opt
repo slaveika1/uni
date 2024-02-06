@@ -1,0 +1,282 @@
+#include <stdio.h>
+#include <math.h>
+#include <string.h>
+#include <stdbool.h>
+
+// Дефиниция на структура за артикул
+struct Product {
+    int id;  // Уникален идентификатор на продукта
+    char name[50];
+    int quantity;
+    float price;
+    enum {
+        LAPTOP,
+        SMARTPHONE,
+        TABLET
+    } category;
+    struct {
+        float screen_size;  // Размер на екрана в инчове
+        char processor[50];  // Вид на процесора
+        int memory_size;  // Размер на паметта в гигабайти
+    } electronicsInfo;  // Информация за електрониката
+    float weight;  // Тегло на продукта
+};
+
+// Дефиниция на константа
+#define MAX_PRODUCTS 100
+#define WAREHOUSE_SIZE 5  // Размер на склада
+
+// Примерен масив с артикули в склада
+struct Product warehouse[WAREHOUSE_SIZE] = {
+    {1, "Laptop Model X", 10, 999.99, LAPTOP, {15, "Intel i7", 16}, 2.5},
+    {2, "Smartphone Model Y", 20, 499.99, SMARTPHONE, {6, "Snapdragon 865", 8}, 0.5},
+    {3, "Tablet Model Z", 15, 299.99, TABLET, {10, "Mediatek", 4}, 1.2},
+    // ... добави още продукти, ако е необходимо
+};
+
+// Помощна функция за проверка на уникалност на id
+int isIdUnique(struct Product *inventory, int count, int newId) {
+    for (int i = 0; i < count; i++) {
+        if (inventory[i].id == newId) {
+            return 0;  // Неуникален id
+        }
+    }
+    return 1;  // Уникален id
+}
+// Function to check if the input is a valid integer
+int isValidInt(char *str) {
+    char *ptr;
+    strtol(str, &ptr, 10);
+    return *ptr == '\n' || *ptr == '\0';
+}
+
+// Function to check if the input is a valid number (integer or float)
+int isValidNumber(char *str) {
+    char *ptr;
+    strtod(str, &ptr);
+    return *ptr == '\n' || *ptr == '\0';
+}
+
+// Function to check if the input is a valid category
+int isValidCategory(char *str) {
+    char *ptr;
+    int category = strtol(str, &ptr, 10);
+    return (*ptr == '\n' || *ptr == '\0') && (category == 0 || category == 1 || category == 2);
+}
+
+// Дефиниция на функция за запис на данни във файл
+void saveToFile(struct Product *inventory, int count) {
+    FILE *file = fopen("inventory.txt", "w");
+
+    if (file == NULL) {
+        printf("Error opening file.\n");
+        return;
+    }
+
+    for (int i = 0; i < count; i++) {
+        fprintf(file, "Product %d:\n", inventory[i].id);
+        fprintf(file, "Name: %s\n", inventory[i].name);
+        fprintf(file, "Quantity: %d\n", inventory[i].quantity);
+        fprintf(file, "Price: %.2f\n", inventory[i].price);
+        fprintf(file, "Category: %d\n", inventory[i].category);
+
+        // Проверка на категорията на продукта и извеждане на съответната информация за електрониката
+        fprintf(file, "Electronics Info:\n");
+        if (inventory[i].category == LAPTOP) {
+            fprintf(file, "Screen Size: %d inches\n", inventory[i].electronicsInfo.screen_size);
+            fprintf(file, "Processor: %s\n", inventory[i].electronicsInfo.processor);
+            fprintf(file, "Memory Size: %d GB\n", inventory[i].electronicsInfo.memory_size);
+        } else if (inventory[i].category == SMARTPHONE) {
+            fprintf(file, "Screen Size: %d inches\n", inventory[i].electronicsInfo.screen_size);
+            fprintf(file, "Processor: %s\n", inventory[i].electronicsInfo.processor);
+            fprintf(file, "Memory Size: %d GB\n", inventory[i].electronicsInfo.memory_size);
+        } else if (inventory[i].category == TABLET) {
+            fprintf(file, "Screen Size: %d inches\n", inventory[i].electronicsInfo.screen_size);
+            fprintf(file, "Processor: %s\n", inventory[i].electronicsInfo.processor);
+            fprintf(file, "Memory Size: %d GB\n", inventory[i].electronicsInfo.memory_size);
+        }
+
+        // Използване на ceil за закръгляне на теглото нагоре
+        fprintf(file, "Weight: %.2f (rounded up: %.2f)\n", inventory[i].weight, ceil(inventory[i].weight));
+        fprintf(file, "------------------------\n");
+    }
+
+    fclose(file);
+}
+
+void addProduct(struct Product *inventory, int *count) {
+    char inputBuffer[50];
+    printf("Enter product name: ");
+    fgets(inventory[*count].name, sizeof(inventory[*count].name), stdin);
+    inventory[*count].name[strcspn(inventory[*count].name, "\n")] = '\0';
+    // Consume all newline characters left in the input buffer
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF) { }
+    do {
+        printf("Enter quantity: ");
+        fgets(inputBuffer, sizeof(inputBuffer), stdin);
+    } while (!isValidInt(inputBuffer) || sscanf(inputBuffer, "%d", &inventory[*count].quantity) != 1 || inventory[*count].quantity < 0);
+    do {
+        printf("Enter price: ");
+        fgets(inputBuffer, sizeof(inputBuffer), stdin);
+    } while (!isValidNumber(inputBuffer) || sscanf(inputBuffer, "%f", &inventory[*count].price) != 1);
+    do {
+        printf("Enter product id: ");
+        fgets(inputBuffer, sizeof(inputBuffer), stdin);
+    } while (!isValidInt(inputBuffer) || sscanf(inputBuffer, "%d", &inventory[*count].id) != 1 || !isIdUnique(inventory, *count, inventory[*count].id));
+    do {
+        printf("Enter category (0: LAPTOP, 1: SMARTPHONE, 2: TABLET): ");
+        fgets(inputBuffer, sizeof(inputBuffer), stdin);
+    } while (!isValidCategory(inputBuffer) || sscanf(inputBuffer, "%d", &inventory[*count].category) != 1);
+    do {
+        printf("Enter screen size (in inches): ");
+        fgets(inputBuffer, sizeof(inputBuffer), stdin);
+        inputBuffer[strcspn(inputBuffer, "\n")] = '\0';  // Remove newline character
+    } while (!isValidNumber(inputBuffer) || sscanf(inputBuffer, "%f", &inventory[*count].electronicsInfo.screen_size) != 1);
+    printf("Screen Size: %f inches\n", inventory[*count].electronicsInfo.screen_size);  //
+        do {
+        printf("Enter processor: ");
+        fgets(inventory[*count].electronicsInfo.processor, sizeof(inventory[*count].electronicsInfo.processor), stdin);
+        inventory[*count].electronicsInfo.processor[strcspn(inventory[*count].electronicsInfo.processor, "\n")] = '\0';
+    } while (strlen(inventory[*count].electronicsInfo.processor) == 0);
+    do {
+        printf("Enter memory size (in GB): ");
+        fgets(inputBuffer, sizeof(inputBuffer), stdin);
+    } while (!isValidInt(inputBuffer) || sscanf(inputBuffer, "%d", &inventory[*count].electronicsInfo.memory_size) != 1);
+    do {
+        printf("Enter weight: ");
+        fgets(inputBuffer, sizeof(inputBuffer), stdin);
+    } while (!isValidNumber(inputBuffer) || sscanf(inputBuffer, "%f", &inventory[*count].weight) != 1);
+    (*count)++;
+}
+
+
+
+
+// Дефиниция на функция за триене на запис
+void deleteProduct(struct Product *inventory, int *count) {
+    int id;
+    printf("Enter the id of the product to delete: ");
+    scanf("%d", &id);
+
+    int index = -1;
+    // Намиране на индекса на продукта с дадения id
+    for (int i = 0; i < *count; i++) {
+        if (inventory[i].id == id) {
+            index = i;
+            break;
+        }
+    }
+
+    if (index != -1) {
+        // Премахване на продукта и преместване на останалите записи
+        for (int i = index; i < *count - 1; i++) {
+            inventory[i] = inventory[i + 1];
+        }
+        (*count)--;
+        printf("Product deleted successfully.\n");
+    } else {
+        printf("Product with id %d not found.\n", id);
+    }
+}
+
+// Дефиниция на функция за изкарване на записи на конзолата
+void displayInventory(struct Product *inventory, int count) {
+    printf("\nInventory:\n");
+    for (int i = 0; i < count; i++) {
+        printf("Product %d:\n", inventory[i].id);
+        printf("Name: %s\n", inventory[i].name);
+        printf("Quantity: %d\n", inventory[i].quantity);
+        printf("Price: %.2f\n", inventory[i].price);
+        printf("Category: %d\n", inventory[i].category);
+
+        // Проверка на категорията на продукта и извеждане на съответната информация за електрониката
+        printf("Electronics Info:\n");
+        if (inventory[i].category == LAPTOP) {
+            printf("Screen Size: %d inches\n", inventory[i].electronicsInfo.screen_size);
+            printf("Processor: %s\n", inventory[i].electronicsInfo.processor);
+            printf("Memory Size: %d GB\n", inventory[i].electronicsInfo.memory_size);
+        } else if (inventory[i].category == SMARTPHONE) {
+            printf("Screen Size: %d inches\n", inventory[i].electronicsInfo.screen_size);
+            printf("Processor: %s\n", inventory[i].electronicsInfo.processor);
+            printf("Memory Size: %d GB\n", inventory[i].electronicsInfo.memory_size);
+        } else if (inventory[i].category == TABLET) {
+            printf("Screen Size: %d inches\n", inventory[i].electronicsInfo.screen_size);
+            printf("Processor: %s\n", inventory[i].electronicsInfo.processor);
+            printf("Memory Size: %d GB\n", inventory[i].electronicsInfo.memory_size);
+        }
+
+        // Използване на ceil за закръгляне на теглото нагоре
+        printf("Weight: %.2f (rounded up: %.2f)\n", inventory[i].weight, ceil(inventory[i].weight));
+        printf("------------------------\n");
+    }
+}
+
+// Дефиниция на функция за заявка на артикул от склада
+void requestProduct(struct Product *warehouse, int warehouseSize) {
+    int requestedId;
+    printf("Enter the id of the product you want to request: ");
+    scanf("%d", &requestedId);
+
+    int index = -1;
+    // Намиране на индекса на артикула в склада
+    for (int i = 0; i < warehouseSize; i++) {
+        if (warehouse[i].id == requestedId) {
+            index = i;
+            break;
+        }
+    }
+
+    if (index != -1 && warehouse[index].quantity > 0) {
+        // Намаляне на количество в склада и увеличаване на количество в инвентара
+        warehouse[index].quantity--;
+        printf("Product %d requested successfully.\n", requestedId);
+    } else {
+        printf("Product with id %d not available in the warehouse or out of stock.\n", requestedId);
+    }
+}
+
+int main() {
+    // Дефиниция на променливи
+    struct Product inventory[MAX_PRODUCTS];
+    struct Product myProduct;
+    int count = 0;
+    int choice;
+
+    do {
+        // Извеждане на меню
+        printf("\n1. Add Product\n");
+        printf("2. Delete Product\n");
+        printf("3. Display Inventory\n");
+        printf("4. Save to File\n");
+        printf("5. Request Product from Warehouse\n");
+        printf("0. Exit\n");
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+
+        switch (choice) {
+            case 1:
+                addProduct(inventory, &count);
+                break;
+            case 2:
+                deleteProduct(inventory, &count);
+                break;
+            case 3:
+                displayInventory(inventory, count);
+                break;
+            case 4:
+                saveToFile(inventory, count);
+                break;
+            case 5:
+                requestProduct(warehouse, WAREHOUSE_SIZE);
+                break;
+            case 0:
+                printf("Exiting program.\n");
+                break;
+            default:
+                printf("Invalid choice. Please try again.\n");
+        }
+    } while (choice != 0);
+
+    return 0;
+}
